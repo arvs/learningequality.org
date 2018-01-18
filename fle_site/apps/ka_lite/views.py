@@ -124,4 +124,4 @@ def user_guide_detail(request, slug):
 
 @ajax_request
 def get_deployments(request):
-    return dict(features=[make_geojson_dict(x.latitude, x.longitude, type="deployment", title=x.organization_name) for x in DeploymentStory.objects.all()], type="FeatureCollection")
+    return dict(features=[make_geojson_dict(x.latitude, x.longitude, type="deployment", title=x.organization_name, description=x.description) for x in DeploymentStory.objects.all()], type="FeatureCollection")

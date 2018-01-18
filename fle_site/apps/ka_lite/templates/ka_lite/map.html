@@ -13,6 +13,10 @@ body {
     padding: 0;
 }
 #map { position:absolute; top:0; bottom:0; width:100%; }
+.mapboxgl-popup {
+  max-width: 400px;
+  font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+}
 .filter-group {
   font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
   font-weight: 600;
@@ -88,8 +92,7 @@ var map = new mapboxgl.Map({
 map.on('load', function() {
     // Add a new source from our GeoJSON data and set the
     // 'cluster' option to true. GL-JS will add the point_count property to your source data.
-    jQuery.getJSON("{% static "js/installs.geojson" %}", function(places) {
-      map.addSource("deployments", {
+    map.addSource("deployments", {
         type: "geojson",
         data: "{% url 'get_deployments' %}",
       });
@@ -105,6 +108,7 @@ map.on('load', function() {
           "text-anchor": "top"
         }
       });
+    jQuery.getJSON("{% static "js/installs.geojson" %}", function(places) {
       map.addSource("points", {
           type: "geojson",
           data: places,
@@ -195,8 +199,7 @@ map.on('load', function() {
 
         // When the checkbox changes, update the visibility of the layer.
         input.addEventListener('change', function(e) {
-          console.log("halal!");
-          [layerID, "cluster-count", "clusters"].forEach(function(layer_id) {
+          [layerID, "cluster-count", "clusters", "unclustered-point"].forEach(function(layer_id) {
             map.setLayoutProperty(layer_id, 'visibility',
                 e.target.checked ? 'visible' : 'none');
           });
@@ -214,6 +217,25 @@ map.on('load', function() {
   map.addControl(new MapboxGeocoder({
       accessToken: mapboxgl.accessToken
   }));
+
+  // When a click event occurs on a feature in the places layer, open a popup at the
+  // location of the feature, with description HTML from its properties.
+  map.on('click', 'places', function (e) {
+      new mapboxgl.Popup()
+          .setLngLat(e.features[0].geometry.coordinates)
+          .setHTML(e.features[0].properties.description)
+          .addTo(map);
+  });
+
+  // Change the cursor to a pointer when the mouse is over the places layer.
+  map.on('mouseenter', 'places', function () {
+      map.getCanvas().style.cursor = 'pointer';
+  });
+
+  // Change it back to a pointer when it leaves.
+  map.on('mouseleave', 'places', function () {
+      map.getCanvas().style.cursor = '';
+  });
    
 });
 </script>
