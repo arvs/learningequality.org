@@ -1,7 +1,7 @@
 import re
 import urllib2
 
-from annoying.decorators import render_to
+from annoying.decorators import render_to, ajax_request
 from collections import OrderedDict
 from distutils.version import StrictVersion
 from fack.models import Question, Topic
@@ -16,6 +16,7 @@ from django.shortcuts import get_object_or_404
 
 from .models import UserResource, DeploymentStory, Gallery, Picture
 from .forms import DeploymentStoryForm, PictureFormSet
+from .convert_to_geojson import make_geojson_dict
 
 @render_to("ka_lite/faq.html")
 def faq(request):
@@ -120,3 +121,7 @@ def user_guide_detail(request, slug):
         "related_resources": related_resources,
         "general_resources": general_resources,
     }
+
+@ajax_request
+def get_deployments(request):
+    return dict(features=[make_geojson_dict(x.latitude, x.longitude, type="deployment") for x in DeploymentStory.objects.all()], type="FeatureCollection")

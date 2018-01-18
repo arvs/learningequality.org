@@ -9,8 +9,8 @@
 <link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v2.1.1/mapbox-gl-geocoder.css' type='text/css' />
 <style>
 body {
-    margin: 0;
-    padding: 0;
+  margin: 0;
+  padding: 0;
 }
 #map { position:absolute; top:0; bottom:0; width:100%; }
 .filter-group {
@@ -64,11 +64,11 @@ body {
 {% endblock extrahead %}
 
 {% block title %}
-    Deployments Map
+Deployments Map
 {% endblock title %}
 
 {% block navigationoverride %}
-    {# This page intentionally left blank #}
+{# This page intentionally left blank #}
 {% endblock navigationoverride %}
 
 {% block bodyoverride %}
@@ -76,130 +76,153 @@ body {
 <div id="map" style="overflow: visible"></div>
 <nav id='filter-group' class='filter-group'></nav>
 <script>
-mapboxgl.accessToken = 'pk.eyJ1IjoiYXJ2bmQiLCJhIjoiY2o4b3gwOW9wMDk4bzJ3cnMyYmN6dWQ3OCJ9.kGZWGMi4_EBuD8klXL3YrA';
-var filterGroup = document.getElementById('filter-group');
-var map = new mapboxgl.Map({
+  mapboxgl.accessToken = 'pk.eyJ1IjoiYXJ2bmQiLCJhIjoiY2o4b3gwOW9wMDk4bzJ3cnMyYmN6dWQ3OCJ9.kGZWGMi4_EBuD8klXL3YrA';
+  var filterGroup = document.getElementById('filter-group');
+  var map = new mapboxgl.Map({
     container: 'map',
     style: 'mapbox://styles/mapbox/streets-v9',
     center: [-103.59179687498357, 40.66995747013945],
     zoom: 3
-});
+  });
 
-map.on('load', function() {
+  map.on('load', function() {
     // Add a new source from our GeoJSON data and set the
     // 'cluster' option to true. GL-JS will add the point_count property to your source data.
-    map.addSource("earthquakes", {
-        type: "geojson",
-        // Point to GeoJSON data. This example visualizes all M1.0+ earthquakes
-        // from 12/22/15 to 1/21/16 as logged by USGS' Earthquake hazards program.
-        data: "{% static "js/installs.geojson" %}",
-        cluster: true,
-        clusterMaxZoom: 14, // Max zoom to cluster points on
-        clusterRadius: 50 // Radius of each cluster when clustering points (defaults to 50)
+    map.addSource("deployments", {
+      type: "geojson",
+      data: "{% static "js/installs.geojson" %}",
     });
-
     map.addLayer({
+      id: "deployments",
+      source: "deployments",
+      type: "symbol",
+      layout: {
+        icon: "school-11"
+        "text-field": "{title}",
+        "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+        "text-offset": [0, 0.6],
+        "text-anchor": "top"
+      }
+    })
+    jQuery.getJSON("{% static "js/installs.geojson" %}", function(places) {
+      map.addSource("installs", {
+        type: "geojson",
+        data: places,
+      });
+
+      map.addLayer({
         id: "clusters",
         type: "circle",
-        source: "earthquakes",
+        source: "installs",
         filter: ["has", "point_count"],
         paint: {
-            "circle-color": {
-                property: "point_count",
-                type: "interval",
-                stops: [
-                    [0, "#51bbd6"],
-                    [100, "#f1f075"],
-                    [750, "#f28cb1"],
-                ]
-            },
-            "circle-radius": {
-                property: "point_count",
-                type: "interval",
-                stops: [
-                    [0, 20],
-                    [100, 30],
-                    [750, 40]
-                ]
-            }
+          "circle-color": {
+            property: "point_count",
+            type: "interval",
+            stops: [
+            [0, "#51bbd6"],
+            [100, "#f1f075"],
+            [750, "#f28cb1"],
+            ]
+          },
+          "circle-radius": {
+            property: "point_count",
+            type: "interval",
+            stops: [
+            [0, 20],
+            [100, 30],
+            [750, 40]
+            ]
+          }
         }
-    });
+      });
 
-    map.addLayer({
+      map.addLayer({
         id: "cluster-count",
         type: "symbol",
-        source: "earthquakes",
+        source: "installs",
         filter: ["has", "point_count"],
         layout: {
-            "text-field": "{point_count_abbreviated}",
-            "text-font": ["DIN Offc Pro Medium", "Arial Unicode MS Bold"],
-            "text-size": 12
+          "text-field": "{point_count_abbreviated}",
+          "text-font": ["DIN Offc Pro Medium", "Arial Unicode MS Bold"],
+          "text-size": 12
         }
-    });
+      });
 
-    map.addLayer({
+      map.addLayer({
         id: "unclustered-point",
         type: "circle",
-        source: "earthquakes",
+        source: "installs",
         filter: ["!has", "point_count"],
         paint: {
-            "circle-color": "#11b4da",
-            "circle-radius": 4,
-            "circle-stroke-width": 1,
-            "circle-stroke-color": "#fff"
+          "circle-color": "#11b4da",
+          "circle-radius": 4,
+          "circle-stroke-width": 1,
+          "circle-stroke-color": "#fff"
         }
-    });
-});
-map.addControl(new mapboxgl.FullscreenControl());
-map.addControl(new MapboxGeocoder({
-    accessToken: mapboxgl.accessToken
-}));
-places.features.forEach(function(feature) {
-    var symbol = feature.properties['icon'];
-    var layerID = 'poi-' + symbol;
+      });
+      places.features.forEach(function(feature) {
+        var symbol = feature.properties['type'];
+        var layerID = 'poi-' + symbol;
 
-    // Add a layer for this symbol type if it hasn't been added already.
-    if (!map.getLayer(layerID)) {
-      map.addLayer({
+      // Add a layer for this symbol type if it hasn't been added already.
+      if (!map.getLayer(layerID)) {
+        map.addLayer({
           "id": layerID,
           "type": "symbol",
-          "source": "places",
+          "source": "installs",
           "layout": {
-              "icon-image": symbol + "-15",
-              "icon-allow-overlap": true
+            "icon-image": symbol + "-15",
+            "icon-allow-overlap": true
           },
-          "filter": ["==", "icon", symbol]
-      });
+          "filter": ["==", "type", symbol]
+        });
 
-      // Add checkbox and label elements for the layer.
-      var input = document.createElement('input');
-      input.type = 'checkbox';
-      input.id = layerID;
-      input.checked = true;
-      filterGroup.appendChild(input);
+        // Add checkbox and label elements for the layer.
+        var input = document.createElement('input');
+        input.type = 'checkbox';
+        input.id = layerID;
+        input.checked = true;
+        filterGroup.appendChild(input);
 
-      var label = document.createElement('label');
-      label.setAttribute('for', layerID);
-      label.textContent = symbol;
-      filterGroup.appendChild(label);
+        var label = document.createElement('label');
+        label.setAttribute('for', layerID);
+        label.textContent = symbol;
+        filterGroup.appendChild(label);
 
-      // When the checkbox changes, update the visibility of the layer.
-      input.addEventListener('change', function(e) {
-          map.setLayoutProperty(layerID, 'visibility',
+        // When the checkbox changes, update the visibility of the layer.
+        input.addEventListener('change', function(e) {
+          console.log("halal!");
+          [layerID, "cluster-count", "clusters"].forEach(function(layer_id) {
+            map.setLayoutProperty(layer_id, 'visibility',
               e.target.checked ? 'visible' : 'none');
-      });
-    }
-}); 
+          });
+        });
+      }
+    });
+    });
+    map.addControl(new mapboxgl.FullscreenControl());
+    map.addControl(new mapboxgl.GeolocateControl({
+      positionOptions: {
+        enableHighAccuracy: true
+      },
+      trackUserLocation: true
+    }));
+    map.addControl(new MapboxGeocoder({
+      accessToken: mapboxgl.accessToken
+    }));
+
+  });
 </script>
 <div>            
-{% include "ka_lite/partials/_map_modal_content.html" %}
-{% include "ka_lite/partials/_about_map_modal.html" %}
-{% include "ka_lite/partials/_tshirt_modal.html" %}
+  {% include "ka_lite/partials/_map_modal_content.html" %}
+  {% include "ka_lite/partials/_about_map_modal.html" %}
+  {% include "ka_lite/partials/_tshirt_modal.html" %}
 </div> 
 {% endblock bodyoverride %}
 
 {% block footerspacing %}{% endblock %}
-    
+
 {% block footeroverride %}
-    {# This page intentionally left blank #}
+{# This page intentionally left blank #}
 {% endblock footeroverride %}

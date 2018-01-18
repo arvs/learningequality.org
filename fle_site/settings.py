@@ -12,7 +12,7 @@ def localor(setting_name, default_val):
     """Returns local_settings version if it exists (and is non-empty), otherwise uses default value"""
     return hasattr(local_settings, setting_name) and getattr(local_settings, setting_name) or default_val
 
-DEBUG          = getattr(local_settings, "DEBUG", False)
+DEBUG          = getattr(local_settings, "DEBUG", True)
 TEMPLATE_DEBUG = getattr(local_settings, "TEMPLATE_DEBUG", DEBUG)
 
 #retrieve Constantcontact info from local_settings
